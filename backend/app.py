@@ -1,15 +1,17 @@
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-import uuid
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
+from flask_socketio import SocketIO
+import uuid
 
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 load_dotenv()
 
@@ -60,26 +62,6 @@ def download_file(file_id):
             return jsonify({"error": "Link expired"}), 410
         return jsonify({"download_url": file_info["download_url"]})
     return jsonify({"error": "File not found"}), 404
-
-@app.route("/delete/<file_id>", methods=["DELETE"])
-def delete_file(file_id):
-    if file_id not in uploaded_files:
-        return jsonify({"error": "File not found"}), 404
-
-    try:
-        file_info = uploaded_files[file_id]
-        file_url = file_info["download_url"]
-
-        public_id = file_url.split("/")[-1].split(".")[0]
-
-        cloudinary.uploader.destroy(public_id)
-
-        del uploaded_files[file_id]
-
-        return jsonify({"message": "File deleted successfully!"}), 200
-    except Exception as e:
-        print("DELETE ERROR:", str(e))
-        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
