@@ -31,18 +31,26 @@ def upload_file():
     file = request.files["file"]
     file_id = str(uuid.uuid4())
     timestamp = datetime.now() + timedelta(minutes=15)
-
     try:
         upload_result = cloudinary.uploader.upload(file, resource_type="auto")
+
         download_url = upload_result["secure_url"]
+        public_id = upload_result["public_id"]
 
         uploaded_files[file_id] = {
             "filename": file.filename,
             "download_url": download_url,
+            "public_id": public_id,
             "expires_at": timestamp
         }
 
-        return jsonify({"file_id": file_id, "download_url": download_url, "expires_at": timestamp})
+        return jsonify({
+            "file_id": file_id,
+            "download_url": download_url,
+            "public_id": public_id,
+            "expires_at": timestamp
+        })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -62,6 +70,24 @@ def download_file(file_id):
             return jsonify({"error": "Link expired"}), 410
         return jsonify({"download_url": file_info["download_url"]})
     return jsonify({"error": "File not found"}), 404
+
+@app.route("/delete/<file_id>", methods=["DELETE"])
+def delete_file(file_id):
+    if file_id not in uploaded_files:
+        return jsonify({"error": "File not found"}), 404
+
+    file_data = uploaded_files.pop(file_id)
+    public_id = file_data.get("public_id")
+
+    if not public_id:
+        return jsonify({"error": "Public ID missing"}), 400
+
+    try:
+        cloudinary.uploader.destroy(public_id)
+
+        return jsonify({"message": "File deleted successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
