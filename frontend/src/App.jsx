@@ -3,7 +3,8 @@ import api from "./api";
 import { io } from "socket.io-client";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "./styles.css";
+import "../styles.css";
+import QRCode from "qrcode";
 
 const socket = io("http://localhost:5000");
 
@@ -52,23 +53,61 @@ function App() {
     }
   };
 
-  const generateShareLink = async (fileId) => {
-    try {
-      const response = await api.get(`/download/${fileId}`);
-      if (response.data.download_url) {
-        navigator.clipboard.writeText(response.data.download_url);
-        toast.success(
-          "Download link copied to clipboard! (Valid only for 15 minutes)"
-        );
-      } else {
-        toast.error("File not found or expired");
+  const FileShare = ({ fileId }) => {
+    const [qrCodeDataUrl, setQrCodeDataUrl] = useState(null);
+  
+    const generateShareLink = async () => {
+      try {
+        const response = await api.get(`/download/${fileId}`);
+        if (response.data.download_url) {
+          const downloadUrl = response.data.download_url;
+  
+          // Copy link to clipboard
+          navigator.clipboard.writeText(downloadUrl);
+          toast.success(
+            "Download link copied to clipboard! (Valid only for 15 minutes)"
+          );
+  
+          // Generate the QR code
+          QRCode.toDataURL(downloadUrl, { width: 200 }, (err, url) => {
+            if (err) {
+              console.error("QR Code generation error:", err);
+              toast.error("Failed to generate QR code");
+            } else {
+              setQrCodeDataUrl(url); // Save the QR code data URL to state
+              toast.success("QR code generated successfully!");
+            }
+          });
+        } else {
+          toast.error("File not found or expired");
+        }
+      } catch (error) {
+        toast.error("Error fetching download link");
+        console.error("Download error:", error);
       }
-    } catch (error) {
-      toast.error("Error fetching download link");
-      console.error("Download error:", error);
-    }
+    };
+  
+    return (
+      <div>
+        <button onClick={generateShareLink} className="share-button">
+          Share
+        </button>
+  
+        {qrCodeDataUrl && (
+          <div className="qr-code-container" style={{ marginTop: "20px" }}>
+            <img
+              src={qrCodeDataUrl}
+              alt="QR Code"
+              style={{ maxWidth: "200px", maxHeight: "200px" }}
+            />
+            <p>Scan the QR code to download the file</p>
+          </div>
+        )}
+      </div>
+    );
   };
-
+  
+  
   const handleDelete = async (fileId, publicId) => {
     try {
       const response = await api.delete(`/delete/${fileId}`, {
@@ -96,18 +135,17 @@ function App() {
 
       <h2>Available Files</h2>
       <ul className="file-list">
-        {files.map((file, index) => (
-          <li key={index} className="file-item">
-            <span>{file.filename}</span>
-            <button onClick={() => generateShareLink(file.file_id)}>
-              Share
-            </button>
-            <button onClick={() => handleDelete(file.file_id, file.public_id)}>
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
+  {files.map((file, index) => (
+    <li key={index} className="file-item">
+      <span>{file.filename}</span>
+      {/* Use the FileShare component for each file */}
+      <FileShare fileId={file.file_id} />
+      <button onClick={() => handleDelete(file.file_id, file.public_id)}>
+        Delete
+      </button>
+    </li>
+  ))}
+</ul>
     </div>
   );
 }
