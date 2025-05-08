@@ -10,8 +10,8 @@ from flask_socketio import SocketIO
 import uuid
 
 app = Flask(__name__)
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+CORS(app, origins=["https://file-sharing-1-yolc.onrender.com"])
+socketio = SocketIO(app, cors_allowed_origins=["https://file-sharing-1-yolc.onrender.com"])
 
 load_dotenv()
 
