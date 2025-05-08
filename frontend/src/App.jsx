@@ -5,7 +5,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles.css";
 
-const socket = io("http://localhost:5000");
+const socket = io("https://file-sharing-hu8l.onrender.com");
 
 function App() {
   const [files, setFiles] = useState([]);
