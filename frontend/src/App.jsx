@@ -4,13 +4,10 @@ import { io } from "socket.io-client";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles.css";
-
 const socket = io("https://file-sharing-hu8l.onrender.com");
-
 function App() {
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
-
   useEffect(() => {
     fetchFiles();
     socket.on("file_uploaded", (data) => {
@@ -18,7 +15,6 @@ function App() {
       fetchFiles();
     });
   }, []);
-
   const fetchFiles = async () => {
     try {
       const response = await api.get("/files");
@@ -27,16 +23,13 @@ function App() {
       console.error("Error fetching files", error);
     }
   };
-
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
   };
-
   const handleUpload = async () => {
     if (!selectedFile) return;
     const formData = new FormData();
     formData.append("file", selectedFile);
-
     try {
       const response = await api.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -51,7 +44,6 @@ function App() {
       console.error("Error uploading file", error);
     }
   };
-
   const generateShareLink = async (fileId) => {
     try {
       const response = await api.get(`/download/${fileId}`);
@@ -68,7 +60,6 @@ function App() {
       console.error("Download error:", error);
     }
   };
-
   const handleDelete = async (fileId, publicId) => {
     try {
       const response = await api.delete(`/delete/${fileId}`, {
@@ -84,7 +75,6 @@ function App() {
       console.error("Error deleting file", error);
     }
   };
-
   return (
     <div className="container">
       <ToastContainer />
@@ -93,7 +83,6 @@ function App() {
         <input type="file" onChange={handleFileChange} />
         <button onClick={handleUpload}>Upload</button>
       </div>
-
       <h2>Available Files</h2>
       <ul className="file-list">
         {files.map((file, index) => (
@@ -111,5 +100,4 @@ function App() {
     </div>
   );
 }
-
 export default App;
